@@ -1,6 +1,6 @@
+console.log('process', import.meta.env)
 export default {
   proxy: {
-    // url: 'https://proxy.4165306.xyz',
-    url: 'https://monad-api.blockvision.org'
+    url: import.meta.env.DEV ? 'https://monad-api.blockvision.org' : 'https://proxy.4165306.xyz'
   }
 }
