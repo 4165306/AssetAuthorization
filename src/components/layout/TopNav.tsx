@@ -1,5 +1,6 @@
 import { defineComponent, computed } from 'vue'
-import { NMenu, NDropdown, NButton, type DropdownOption } from 'naive-ui'
+import { NMenu, NDropdown, NButton, NIcon, type DropdownOption } from 'naive-ui'
+import { LogoTwitter } from '@vicons/ionicons5'
 import { useRouter, useRoute } from 'vue-router'
 import { useWalletStore } from '@/stores/wallet'
 
@@ -85,6 +86,18 @@ export default defineComponent({
           </div>
           
           <div class="flex items-center space-x-4">
+            {/* Twitter Link */}
+            <a 
+              href="https://x.com/y_caterpillar" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              class="text-purple-400 hover:text-purple-300 transition-colors duration-300 flex items-center"
+            >
+              <NIcon size={24}>
+                <LogoTwitter />
+              </NIcon>
+            </a>
+
             <NDropdown 
               {...dropdownProps}
               renderLabel={(option: DropdownOption) => {
@@ -100,6 +113,7 @@ export default defineComponent({
                 <div class="i-carbon-chevron-down text-white"></div>
               </div>
             </NDropdown>
+            
             <NButton class="cyber-button-secondary h-9">
               {formatAddress(walletStore.address || '0x0000000000000000000000000000000000000000')}
             </NButton>
