@@ -2,6 +2,7 @@ import { networks } from "@/config/network";
 import { BrowserProvider, getAddress } from "ethers";
 // @ts-ignore
 import { HmacSHA256, MD5 } from "crypto-js";
+import proxy from "@/config/proxy";
 
 class AbstructEthers {
   protected provider: BrowserProvider;
@@ -113,24 +114,26 @@ class MonadRpc extends AbstructEthers implements RpcClient {
     return this.address as string;
   }
 
-  async getTokens(): Promise<Token> {
-    const address = this.address ?? await this.connect()
+  async getTokens(_address: string = ""): Promise<Token> {
+    const address = _address || (this.address ?? await this.connect())
     const tokenUrl = `/testnet/api/account/tokenPortfolio?address=${address}&pageSize=100&pageIndex=1`
     const NFTUrl = `/testnet/api/account/nfts?address=${address}&pageSize=100&pageIndex=1`
     const tokenSignure = this.getAppidAndSecret(tokenUrl)
     const nftSignure = this.getAppidAndSecret(NFTUrl)
-    const tokens = fetch(networks['Monad Testnet'].apiUrl + tokenUrl, {
+    const tokens = fetch(proxy.proxy.url + tokenUrl, {
       headers: {
         "x-app-id": tokenSignure.appId,
         "x-api-signature": tokenSignure.secret,
-        "x-api-timestamp": tokenSignure.timestamp
+        "x-api-timestamp": tokenSignure.timestamp,
+        "P-PROXY-HOST": networks["Monad Testnet"].apiUrl  
       }
     })
-    const nfts = fetch(networks['Monad Testnet'].apiUrl + NFTUrl, {
+      const nfts = fetch(proxy.proxy.url + NFTUrl, {
       headers: {
         "x-app-id": nftSignure.appId,
         "x-api-signature": nftSignure.secret,
-        "x-api-timestamp": nftSignure.timestamp
+        "x-api-timestamp": nftSignure.timestamp,
+        "P-PROXY-HOST": networks["Monad Testnet"].apiUrl
       }
     })
     const [tokensResponse, nftsResponse] = await Promise.all([tokens, nfts])
@@ -146,11 +149,12 @@ class MonadRpc extends AbstructEthers implements RpcClient {
     const address = this.address ?? await this.connect()
     const tokenUrl = `/testnet/api/account/tokenPortfolio?address=${address}&pageSize=100&pageIndex=1`
     const tokenSignure = this.getAppidAndSecret(tokenUrl)
-    const tokens = await fetch(networks['Monad Testnet'].apiUrl + tokenUrl, {
+    const tokens = await fetch(proxy.proxy.url + tokenUrl, {
       headers: {
         "x-app-id": tokenSignure.appId,
         "x-api-signature": tokenSignure.secret,
-        "x-api-timestamp": tokenSignure.timestamp
+        "x-api-timestamp": tokenSignure.timestamp,
+        "P-PROXY-HOST": networks["Monad Testnet"].apiUrl
       }
     })
     const tokensData = await tokens.json()
@@ -163,8 +167,8 @@ class MonadRpc extends AbstructEthers implements RpcClient {
   }
 
 
-  async *getHistoryTransactions(csr: number = 0): AsyncGenerator<Transaction[], void, unknown> {
-    const address = this.address ?? await this.connect();
+  async *getHistoryTransactions(csr: number = 0, _address: string = ''): AsyncGenerator<Transaction[], void, unknown> {
+    const address = _address || (this.address ?? await this.connect());
     const api = `/testnet/api/account/transactions?address=${address}`;
     let cursor = csr;
     try {
@@ -172,11 +176,12 @@ class MonadRpc extends AbstructEthers implements RpcClient {
         let request_url = cursor !== 0 ? `${api}&cursor=${cursor}` : api;
         const signure = this.getAppidAndSecret(request_url);
         
-        const response = await fetch(networks['Monad Testnet'].apiUrl + request_url, {
+        const response = await fetch(proxy.proxy.url + request_url, {
           headers: {
             "x-app-id": signure.appId,
             "x-api-signature": signure.secret,
-            "x-api-timestamp": signure.timestamp
+            "x-api-timestamp": signure.timestamp,
+            "P-PROXY-HOST": networks["Monad Testnet"].apiUrl
           }
         });
         
@@ -213,7 +218,7 @@ class MonadRpc extends AbstructEthers implements RpcClient {
   async verifyContract(options: VerifyContractOptions): Promise<boolean> {
     const api = '/testnet/api/verifyContractV2/verify/solc'
     const signure = this.getAppidAndSecret(api)
-    const response = await fetch(networks['Monad Testnet'].apiUrl + api, {
+    const response = await fetch(proxy.proxy.url + api, {
       headers: {
         "x-app-id": signure.appId,
         "x-api-signature": signure.secret,
