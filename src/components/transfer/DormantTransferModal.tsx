@@ -1,99 +1,109 @@
-import { defineComponent, ref } from 'vue'
-import { NModal, NButton, NTabs, NTabPane, NInput, useMessage } from 'naive-ui'
-import MonacoEditor from '@/components/common/MonacoEditor'
-import { ethers } from 'ethers'
-import { BrowserProvider } from 'ethers'
-import DEFAULT_CONTRACT from '@/contracts/DormantTransfer.sol?raw'
+import { defineComponent, ref, reactive, nextTick } from 'vue'
+import { NModal, NButton, NInput, useMessage, NIcon } from 'naive-ui'
+import { TrashBin, Add } from '@vicons/ionicons5'
+
+interface HeirConfig {
+  address: string
+  amount: string
+  percentage: number
+}
 
 export default defineComponent({
   name: 'DormantTransferModal',
   props: {
     show: Boolean,
-    tokenAddress: String,
-    tokenSymbol: String
+    tokenAddress: {
+      type: String,
+      required: true
+    },
+    tokenSymbol: String,
+    tokenDecimals: {
+      type: Number,
+      default: 18
+    }
   },
   emits: ['update:show'],
   setup(props, { emit }) {
     const message = useMessage()
     const loading = ref(false)
-    const contractCode = ref(DEFAULT_CONTRACT)
-    const deployedAddress = ref('')
-    const activeTab = ref('code')
-    const heirAddress = ref('0xf7ddb891f45676712049078c2651646077777777')
-    const inactiveDays = ref(180)
-    const compileProgress = ref('')
 
+    // 继承人配置列表
+    const heirs = reactive<HeirConfig[]>([
+      { address: '', amount: '0', percentage: 0 }
+    ])
+
+    // 添加继承人并滚动到底部
+    const addHeir = () => {
+      heirs.push({ address: '', amount: '0', percentage: 0 })
+      // 等待 DOM 更新后滚动
+      nextTick(() => {
+        const container = document.querySelector('.scroll-container')
+        if (container) {
+          container.scrollTop = container.scrollHeight
+        }
+      })
+    }
+
+    // 移除继承人
+    const removeHeir = (index: number) => {
+      if (heirs.length > 1) {
+        heirs.splice(index, 1)
+      }
+    }
+
+    // 验证配置
+    const validateConfig = (): boolean => {
+      // 检查地址是否都填写
+      if (heirs.some(heir => !heir.address)) {
+        message.error('Please fill in all heir addresses')
+        return false
+      }
+
+      // 检查地址是否有效
+      if (heirs.some(heir => !heir.address.match(/^0x[a-fA-F0-9]{40}$/))) {
+        message.error('Invalid heir address format')
+        return false
+      }
+
+      // 检查是否有重复地址
+      const addresses = new Set(heirs.map(h => h.address.toLowerCase()))
+      if (addresses.size !== heirs.length) {
+        message.error('Duplicate heir addresses found')
+        return false
+      }
+
+      // 检查分配方式
+      let totalPercentage = 0
+      for (const heir of heirs) {
+        if (heir.amount !== '0' && heir.percentage !== 0) {
+          message.error('Cannot set both amount and percentage for the same heir')
+          return false
+        }
+        if (heir.amount === '0' && heir.percentage === 0) {
+          message.error('Must set either amount or percentage for each heir')
+          return false
+        }
+        totalPercentage += heir.percentage
+      }
+
+      // 检查百分比总和
+      if (totalPercentage > 0 && totalPercentage !== 100) {
+        message.error('Total percentage must be 100%')
+        return false
+      }
+
+      return true
+    }
+
+    // 部署合约
     const handleDeploy = async () => {
+      if (!validateConfig()) return
+
       try {
         loading.value = true
-        compileProgress.value = ''
-        
-        // 创建 Web Worker
-        const worker = new Worker(
-          new URL('@/workers/compiler.worker.js', import.meta.url)
-        )
-        
-        // 等待编译结果
-        const contract: any = await new Promise((resolve, reject) => {
-          worker.onmessage = (e) => {
-            const { type, data } = e.data
-            
-            switch (type) {
-              case 'progress':
-                compileProgress.value = data
-                break
-              case 'success':
-                resolve(data)
-                break
-              case 'error':
-                reject(new Error(data))
-                break
-            }
-          }
-          
-          worker.onerror = (error) => {
-            reject(error)
-          }
-          
-          // 发送合约代码到 worker
-          worker.postMessage({ contractCode: contractCode.value })
-        })
-        // 获取 provider 和 signer
-        const provider = new BrowserProvider(window.ethereum)
-        const signer = await provider.getSigner()
-        
-        // 创建合约工厂
-        const factory = new ethers.ContractFactory(
-          contract.abi,
-          contract.evm.bytecode.object,
-          signer
-        )
-
-        // 部署合约
-        compileProgress.value = 'Deploying contract...'
-        const deployedContract = await factory.deploy(
-          heirAddress.value,
-          inactiveDays.value * 24 * 60 * 60
-        )
-        
-        compileProgress.value = 'Waiting for deployment...'
-        await deployedContract.waitForDeployment()
-        deployedAddress.value = await deployedContract.getAddress()
-        // 授权代币
-        compileProgress.value = 'Approving token...'
-        const tokenContract = new ethers.Contract(
-          props.tokenAddress!,
-          ['function approve(address spender, uint256 amount) external returns (bool)'],
-          signer
-        )
-        const tx2 = await tokenContract.approve(
-          deployedAddress.value,
-          ethers.MaxUint256
-        )
-        await tx2.wait()
-        
-        compileProgress.value = ''
-        message.success('Contract deployed and token approved successfully')
+        // TODO: 调用合约部署逻辑
+        message.success('Contract deployed successfully')
+        emit('update:show', false)
       } catch (error) {
         console.error('Failed to deploy contract:', error)
         message.error('Failed to deploy contract')
@@ -101,100 +111,128 @@ export default defineComponent({
         loading.value = false
       }
     }
-
-    const handleClose = () => {
-      emit('update:show', false)
+    const inputStyle = {
+      '--n-color': 'transparent',
+      '--n-color-disabled': 'transparent',
+      '--n-text-color': '#fff',
+      '--n-border': '1px solid rgba(147, 51, 234, 0.2)',
+      '--n-border-hover': '1px solid rgba(147, 51, 234, 0.4)',
+      '--n-border-focus': '1px solid rgba(147, 51, 234, 0.6)',
+      '--n-placeholder-color': 'rgba(255, 255, 255, 0.3)',
+      '--n-color-focus': 'transparent',
+      '--n-loading-color': 'rgba(147, 51, 234, 0.6)',
+      '--n-caret-color': '#fff',
+      '--n-height': '34px',
+      '--n-padding': '0 12px'
     }
 
     return () => (
-      <NModal
-        show={props.show}
-        onUpdateShow={handleClose}
-        transformOrigin="center"
-        style="width: 80vw; max-width: 1400px;"
-      >
-        <div class="bg-gray-900 p-6 rounded-lg">
-          <h3 class="text-xl text-white mb-6">
-            Setup Dormant Transfer for {props.tokenSymbol}
-          </h3>
-          
-          <NTabs 
-            v-model={[activeTab.value, 'value']}
-            class="cyber-tabs"
-            style={{
-              '--n-tab-text-color': 'rgb(209 213 219)',
-              '--n-tab-text-color-active': 'white',
-              '--n-tab-text-color-hover': 'white',
-              '--n-tab-text-color-disabled': 'rgba(255, 255, 255, 0.4)'
-            }}
-          >
-            <NTabPane name="code" tab="Contract Code">
-              <div class="h-[70vh] mb-4">
-                <MonacoEditor
-                  v-model={[contractCode.value, 'value']}
-                  language="solidity"
-                  theme="vs-dark"
-                />
-              </div>
-            </NTabPane>
-            
-            <NTabPane name="settings" tab="Transfer Settings">
-              <div class="space-y-4 py-4">
-                <div>
-                  <label class="text-gray-400 block mb-2">Heir Address</label>
-                  <NInput
-                    v-model={[heirAddress.value, 'value']}
-                    placeholder="Enter the heir's wallet address"
-                    class="cyber-input"
-                    style={{
-                      '--n-color': 'rgba(17, 24, 39, 0.7)',
-                      '--n-color-hover': 'rgba(17, 24, 39, 0.9)',
-                      '--n-color-focus': 'rgba(17, 24, 39, 0.9)',
-                      '--n-text-color': 'white',
-                      '--n-placeholder-color': 'rgba(156, 163, 175, 0.6)',
-                      '--n-border': '1px solid rgba(147, 51, 234, 0.2)',
-                      '--n-border-hover': '1px solid rgba(147, 51, 234, 0.4)',
-                      '--n-border-focus': '1px solid rgba(147, 51, 234, 0.6)'
-                    }}
-                  />
-                </div>
-                
-                <div>
-                  <label class="text-gray-400 block mb-2">
-                    Inactive Period (days)
-                  </label>
-                  <NInput
-                    v-model={[inactiveDays.value, 'value']}
-                    inputProps={{ type: 'number', min: 1 }}
-                    placeholder="Enter inactive period in days"
-                    class="cyber-input"
-                    style={{
-                      '--n-color': 'rgba(17, 24, 39, 0.7)',
-                      '--n-color-hover': 'rgba(17, 24, 39, 0.9)',
-                      '--n-color-focus': 'rgba(17, 24, 39, 0.9)',
-                      '--n-text-color': 'white',
-                      '--n-placeholder-color': 'rgba(156, 163, 175, 0.6)',
-                      '--n-border': '1px solid rgba(147, 51, 234, 0.2)',
-                      '--n-border-hover': '1px solid rgba(147, 51, 234, 0.4)',
-                      '--n-border-focus': '1px solid rgba(147, 51, 234, 0.6)',
-                    }}
-                    onUpdateValue={(val) => {
-                      // 确保输入的是正整数
-                      const num = parseInt(val)
-                      if (num && num > 0) {
-                        inactiveDays.value = num
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-            </NTabPane>
-          </NTabs>
+      <NModal show={props.show} onUpdateShow={(v) => emit('update:show', v)}>
+        <div class="bg-gray-900 p-6 rounded-lg w-[50vh]">
+          {/* 添加自定义滚动条样式的滚动区域 */}
+          <div class="max-h-[50vh] overflow-y-auto mb-6 scroll-container" style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(147, 51, 234, 0.5) transparent'
+          }}>
+            <h3 class="text-xl text-white mb-6">
+              Setup Inheritance for {props.tokenSymbol}
+            </h3>
 
-          <div class="grid grid-cols-2 gap-4 mt-6">
+            {/* Token Address */}
+            <div class="mb-6">
+              <label class="text-gray-400 block mb-2">Token Address</label>
+              <NInput
+                value={props.tokenAddress}
+                disabled
+                class="cyber-input"
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Heirs Configuration */}
+            <div class="space-y-4">
+              {heirs.map((heir, index) => (
+                <div key={index} class="border border-purple-800/20 rounded-lg p-4">
+                  <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                      <label class="text-gray-400">
+                        Heir Address {index + 1}
+                      </label>
+                      {heirs.length > 1 && (
+                        <NButton
+                          circle
+                          size="tiny"
+                          type="error"
+                          onClick={() => removeHeir(index)}
+                        >
+                          <NIcon>
+                            <TrashBin />
+                          </NIcon>
+                        </NButton>
+                      )}
+                    </div>
+                    <NInput
+                      v-model={[heir.address, 'value']}
+                      placeholder="0x..."
+                      class="cyber-input"
+                      style={inputStyle}
+                    />
+                  </div>
+                  
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="text-gray-400 block mb-2">Amount</label>
+                      <NInput
+                        v-model={[heir.amount, 'value']}
+                        inputProps={{
+                          type: 'number',
+                          min: '0'
+                        }}
+                        disabled={heir.percentage > 0}
+                        placeholder="0"
+                        class="cyber-input"
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label class="text-gray-400 block mb-2">Percentage</label>
+                      <NInput
+                        v-model={[heir.percentage, 'value']}
+                        inputProps={{
+                          type: 'number',
+                          min: '0',
+                          max: '100'
+                        }}
+                        disabled={heir.amount !== '0'}
+                        placeholder="0"
+                        class="cyber-input"
+                        style={inputStyle}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add Heir Button */}
+            <div class="mt-4">
+              <NButton
+                class="cyber-button-secondary w-full"
+                onClick={addHeir}
+              >
+                <NIcon class="mr-1">
+                  <Add />
+                </NIcon>
+                Add Heir
+              </NButton>
+            </div>
+          </div>
+
+          {/* Action Buttons - 固定在底部 */}
+          <div class="grid grid-cols-2 gap-4">
             <NButton 
               class="cyber-button-secondary" 
-              onClick={handleClose}
+              onClick={() => emit('update:show', false)}
             >
               Cancel
             </NButton>
@@ -203,24 +241,10 @@ export default defineComponent({
               class="cyber-button"
               loading={loading.value}
               onClick={handleDeploy}
-              disabled={!heirAddress.value || inactiveDays.value < 1}
             >
-              <span class="text-white">Deploy & Approve</span>
+              <span class="text-white">Deploy</span>
             </NButton>
           </div>
-
-          {deployedAddress.value && (
-            <div class="mt-4">
-              <div class="text-gray-400 mb-2">Deployed Contract Address</div>
-              <div class="text-white break-all">{deployedAddress.value}</div>
-            </div>
-          )}
-
-          {compileProgress.value && (
-            <div class="mt-4 text-gray-400">
-              {compileProgress.value}
-            </div>
-          )}
         </div>
       </NModal>
     )

@@ -38,7 +38,7 @@ export default defineComponent({
           symbol: token.symbol.length > 9 ? token.symbol.slice(0,7) + '...' : token.symbol,
           amount: token.balance.slice(0,8),
           decimal: token.decimal,
-          imageURL: token.imageURL || '/default-token.png'
+          imageURL: token.imageURL || '/token-default.svg'
         }))
 
         // 处理 NFT 数据
