@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { ethers } from 'ethers'
 import { BrowserProvider } from 'ethers'
 import { networks } from '@/config/network'
 function formatChainId(chainId: string | number): string {

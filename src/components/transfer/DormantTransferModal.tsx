@@ -1,10 +1,9 @@
 import { defineComponent, ref } from 'vue'
-import { NModal, NButton, NTabs, NTabPane, NInput, NSpace, useMessage } from 'naive-ui'
+import { NModal, NButton, NTabs, NTabPane, NInput, useMessage } from 'naive-ui'
 import MonacoEditor from '@/components/common/MonacoEditor'
 import { ethers } from 'ethers'
 import { BrowserProvider } from 'ethers'
 import DEFAULT_CONTRACT from '@/contracts/DormantTransfer.sol?raw'
-import { getRpcClient } from '@/utils/ethers'
 
 export default defineComponent({
   name: 'DormantTransferModal',

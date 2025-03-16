@@ -16,13 +16,17 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
-
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "jsx": "preserve",
+    "jsxImportSource": "vue"
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "src/workers/compiler.worker.js", "vite.config.ts", "test/**/*.ts", "test/crypto.test.js", "test/deploy.test.ts"]
 }

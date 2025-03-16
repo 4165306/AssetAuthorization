@@ -1,14 +1,5 @@
-<script lang="ts">
-import { defineComponent } from 'vue'
+<script lang="ts" setup>
 import { NMessageProvider, NConfigProvider } from 'naive-ui'
-
-export default defineComponent({
-  name: 'App',
-  components: {
-    NMessageProvider,
-    NConfigProvider
-  }
-})
 </script>
 
 <template>

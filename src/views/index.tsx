@@ -1,6 +1,5 @@
 import { defineComponent, ref } from 'vue'
-import { NCard, NGrid, NGridItem, NButton, NSpace, NTabs, NTabPane } from 'naive-ui'
-import { useRouter } from 'vue-router'
+import { NCard, NGrid, NGridItem, NTabs, NTabPane } from 'naive-ui'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { PieChart, LineChart } from 'echarts/charts'
@@ -21,7 +20,6 @@ use([
 export default defineComponent({
   name: 'Home',
   setup() {
-    const router = useRouter()
     const activeTab = ref('assets')
 
     // 资产分布图表配置

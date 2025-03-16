@@ -2,7 +2,6 @@ import { defineComponent, ref, onMounted } from 'vue'
 import { getRpcClient } from '@/utils/ethers'
 import CyberCard from '../common/CyberCard'
 import { networks } from '@/config/network'
-import LocalStore from '@/stores/localstorage'
 
 export default defineComponent({
   name: 'GasStats',

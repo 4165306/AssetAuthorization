@@ -21,7 +21,7 @@ export class WalletService {
           method: 'eth_accounts' 
         })
         if (accounts.length > 0) {
-          this.store.setWallet(accounts[0])
+          this.store.$patch({ address: accounts[0] })
           this.router.push('/dashboard')
         }
       } catch (err) {
@@ -37,7 +37,7 @@ export class WalletService {
           this.store.disconnect()
           this.router.push('/')
         } else {
-          this.store.setWallet(accounts[0])
+          this.store.$patch({ address: accounts[0] })
           this.router.push('/dashboard')
         }
       })

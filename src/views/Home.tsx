@@ -9,15 +9,6 @@ export default defineComponent({
   name: 'Home',
   setup() {
     const activeTab = ref('assets')
-
-    const assetData = [
-      { value: 5.2, name: 'ETH' },
-      { value: 12000, name: 'USDT' },
-      { value: 3.1, name: 'BTC' },
-      { value: 15000, name: 'NFTs' },
-      { value: 8000, name: 'DeFi' }
-    ]
-
     return () => (
       <div class="cyber-bg min-h-screen p-8">
         <div class="max-w-6xl mx-auto">
@@ -34,10 +25,7 @@ export default defineComponent({
             <NTabPane name="assets" tab="资产概览">
               <NGrid cols="1 xl:2" responsive="screen" xGap={24} yGap={24}>
                 <NGridItem>
-                  <AssetOverview 
-                    totalValue="142,530.00"
-                    distribution={assetData}
-                  />
+                  <AssetOverview />
                 </NGridItem>
                 <NGridItem>
                   <LegacyPlanning 

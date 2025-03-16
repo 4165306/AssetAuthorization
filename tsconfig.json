@@ -6,5 +6,7 @@
   ],
   "compilerOptions": {
     "baseUrl": ".",
+    "jsx": "preserve",
+    "jsxImportSource": "vue"
   }
 }

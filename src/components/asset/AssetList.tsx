@@ -1,5 +1,5 @@
 import { defineComponent, onMounted, ref } from 'vue'
-import { NButton, NSpace } from 'naive-ui'
+import { NButton } from 'naive-ui'
 import CyberCard from '../common/CyberCard'
 import { formatNumber } from '@/utils/format'
 import { getRpcClient, type Token } from '@/utils/ethers'

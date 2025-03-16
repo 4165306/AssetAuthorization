@@ -43,7 +43,7 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _, next) => {
   const walletStore = useWalletStore()
   
   if (to.meta.requiresAuth && !walletStore.isConnected) {

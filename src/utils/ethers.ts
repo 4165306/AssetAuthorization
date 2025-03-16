@@ -1,5 +1,6 @@
 import { networks } from "@/config/network";
 import { BrowserProvider, getAddress } from "ethers";
+// @ts-ignore
 import { HmacSHA256, MD5 } from "crypto-js";
 
 class AbstructEthers {
@@ -102,8 +103,6 @@ export interface Token {
 class MonadRpc extends AbstructEthers implements RpcClient {
   private address: string | null = null;
   private lastCursor: number | null = null;
-  private readonly CURSOR_KEY = 'monad_tx_cursor';
-  private readonly STATS_CACHE_KEY = 'monad_gas_stats';
 
   // use window.ethereum to connect to the network
   constructor() {
