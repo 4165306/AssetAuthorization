@@ -22,7 +22,7 @@ export default defineComponent({
             onUpdateValue={(v) => activeTab.value = v}
             class="cyber-tabs"
           >
-            <NTabPane name="assets" tab="资产概览">
+            <NTabPane name="assets" tab="assets">
               <NGrid cols="1 xl:2" responsive="screen" xGap={24} yGap={24}>
                 <NGridItem>
                   <AssetOverview />
@@ -41,13 +41,13 @@ export default defineComponent({
               </div>
             </NTabPane>
 
-            <NTabPane name="beneficiaries" tab="受益人管理">
+            <NTabPane name="beneficiaries" tab="beneficiaries">
               <CyberCard>
                 {/* 受益人列表组件将在这里实现 */}
               </CyberCard>
             </NTabPane>
 
-            <NTabPane name="memorial" tab="祭奠空间" disabled>
+            <NTabPane name="memorial" tab="memorial" disabled>
               <CyberCard>
                 <div class="text-center text-purple-200 py-12">
                   功能开发中...

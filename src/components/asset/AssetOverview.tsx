@@ -33,13 +33,12 @@ export default defineComponent({
       try {
         const rpcClient = getRpcClient("Monad Testnet")
         const tokenData = await rpcClient.getTokens()
-        
         // 处理代币数据
         assets.value.tokens = tokenData.TOKEN.data.map(token => ({
-          symbol: token.symbol,
-          amount: (Number(token.balance) / Math.pow(10, token.decimal)).toFixed(4),
+          symbol: token.symbol.length > 9 ? token.symbol.slice(0,7) + '...' : token.symbol,
+          amount: token.balance.slice(0,8),
           decimal: token.decimal,
-          imageURL: token.imageURL
+          imageURL: token.imageURL || '/default-token.png'
         }))
 
         // 处理 NFT 数据
@@ -47,7 +46,7 @@ export default defineComponent({
           name: collection.name || collection.symbol,
           count: collection.items.reduce((sum, item) => sum + Number(item.qty), 0),
           items: collection.items.map(item => ({
-            image: item.image,
+            image: item.image || '/default-nft.jpeg',
             name: item.name,
             tokenId: item.tokenId
           }))

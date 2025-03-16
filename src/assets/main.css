@@ -445,3 +445,22 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+
+.network-dropdown-menu .n-dropdown-option {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+.network-dropdown-menu .n-dropdown-option:hover {
+  background: rgba(139, 92, 246, 0.2) !important;
+}
+
+.network-dropdown-menu .n-dropdown-option.n-dropdown-option--disabled {
+  color: #6b7280 !important;
+  cursor: not-allowed;
+}
+
+.network-dropdown-menu .n-dropdown-divider {
+  background-color: rgba(139, 92, 246, 0.2) !important;
+}

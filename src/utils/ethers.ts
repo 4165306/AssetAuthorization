@@ -23,11 +23,7 @@ export interface RpcClient {
   connect(): Promise<string>;
   getTokens(): Promise<Token>;
   getTokenBalance(tokenAddress: string): Promise<string>;
-  getHistoryTransactions(csr: number): Promise<{
-    transactions: Transaction[];
-    lastCursor: number;
-    lastTxHash: string;
-  }>;
+  getHistoryTransactions(csr: number): AsyncGenerator<Transaction[], void, unknown>;
   changeNetwork(chainId: number): Promise<string>;
   getERC20Tokens(): Promise<Token['TOKEN']['data']>;
   verifyContract(options: VerifyContractOptions): Promise<boolean>;
@@ -102,7 +98,6 @@ export interface Token {
 
 class MonadRpc extends AbstructEthers implements RpcClient {
   private address: string | null = null;
-  private lastCursor: number | null = null;
 
   // use window.ethereum to connect to the network
   constructor() {
@@ -167,15 +162,11 @@ class MonadRpc extends AbstructEthers implements RpcClient {
     return balance;
   }
 
-  async getHistoryTransactions(csr: number = 0): Promise<{
-    transactions: Transaction[];
-    lastCursor: number;
-    lastTxHash: string;
-  }> {
+
+  async *getHistoryTransactions(csr: number = 0): AsyncGenerator<Transaction[], void, unknown> {
     const address = this.address ?? await this.connect();
     const api = `/testnet/api/account/transactions?address=${address}`;
     let cursor = csr;
-    let transactions: Transaction[] = [];
     try {
       while(true) {
         let request_url = cursor !== 0 ? `${api}&cursor=${cursor}` : api;
@@ -191,24 +182,16 @@ class MonadRpc extends AbstructEthers implements RpcClient {
         
         const data = await response.json();
         const newTransactions = data.result.data;
-        transactions = [...transactions, ...newTransactions];
+        yield(newTransactions)
         
         if (data.result.nextPageCursor) {
           cursor = data.result.nextPageCursor;
           // 每次获取新数据后更新统计缓存
           await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
         } else {
-          this.lastCursor = cursor;
           break;
         }
       }
-      console.log('transactions', transactions, this.lastCursor, transactions[transactions.length - 1].hash)
-      return {
-        transactions,
-        lastCursor: cursor,
-        lastTxHash: transactions[transactions.length - 1].hash
-      };
-      
     } catch (error) {
       throw new Error('Failed to fetch transactions');
     }

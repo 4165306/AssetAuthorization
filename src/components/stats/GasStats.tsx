@@ -1,32 +1,263 @@
-import { defineComponent, ref, onMounted } from 'vue'
+import { defineComponent, ref, onMounted, computed, reactive } from 'vue'
 import { getRpcClient } from '@/utils/ethers'
 import CyberCard from '../common/CyberCard'
 import { networks } from '@/config/network'
+import HourlyDistributionChart from './HourlyDistributionChart'
 
 export default defineComponent({
   name: 'GasStats',
   setup() {
     const loading = ref(true)
-    const stats = ref({
-      totalGasUsed: 0,
-      totalGasFee: 0,
-      averageGasPrice: 0,
-      transactionCount: 0
+    const selectedPeriod = ref<keyof typeof statsData>('all')
+
+    // 使用 reactive 来处理复杂的状态数据
+    const statsData = reactive<{
+      [key: string]: {
+        totalGasFee: number
+        transactionCount: number
+        totalGasUsed: number
+        averageGasPrice: number
+        hourlyStats: {
+          [timeSlot: string]: {
+            transactions: number
+            gasUsed: number
+            gasFee: number
+          }
+        }
+      }
+    }>({
+      '1d': { 
+        totalGasFee: 0, 
+        transactionCount: 0, 
+        totalGasUsed: 0, 
+        averageGasPrice: 0,
+        hourlyStats: {
+          '0-3': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '3-6': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '6-9': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '9-12': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '12-15': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
+        }
+      },
+      '7d': { 
+        totalGasFee: 0, 
+        transactionCount: 0, 
+        totalGasUsed: 0, 
+        averageGasPrice: 0,
+        hourlyStats: {
+          '0-3': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '3-6': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '6-9': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '9-12': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '12-15': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
+        }
+      },
+      '15d': { 
+        totalGasFee: 0, 
+        transactionCount: 0, 
+        totalGasUsed: 0, 
+        averageGasPrice: 0,
+        hourlyStats: {
+          '0-3': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '3-6': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '6-9': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '9-12': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '12-15': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
+        }
+      },
+      '30d': { 
+        totalGasFee: 0, 
+        transactionCount: 0, 
+        totalGasUsed: 0, 
+        averageGasPrice: 0,
+        hourlyStats: {
+          '0-3': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '3-6': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '6-9': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '9-12': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '12-15': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
+        }
+      },
+      '180d': { 
+        totalGasFee: 0, 
+        transactionCount: 0, 
+        totalGasUsed: 0, 
+        averageGasPrice: 0,
+        hourlyStats: {
+          '0-3': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '3-6': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '6-9': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '9-12': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '12-15': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
+        }
+      },
+      '365d': { 
+        totalGasFee: 0, 
+        transactionCount: 0, 
+        totalGasUsed: 0, 
+        averageGasPrice: 0,
+        hourlyStats: {
+          '0-3': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '3-6': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '6-9': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '9-12': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '12-15': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
+        }
+      },
+      'all': { 
+        totalGasFee: 0, 
+        transactionCount: 0, 
+        totalGasUsed: 0, 
+        averageGasPrice: 0,
+        hourlyStats: {
+          '0-3': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '3-6': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '6-9': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '9-12': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '12-15': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
+          '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
+        }
+      }
+    })
+
+    const timeRanges = {
+      '1d': 24 * 60 * 60 * 1000,
+      '7d': 7 * 24 * 60 * 60 * 1000,
+      '15d': 15 * 24 * 60 * 60 * 1000,
+      '30d': 30 * 24 * 60 * 60 * 1000,
+      '180d': 180 * 24 * 60 * 60 * 1000,
+      '365d': 365 * 24 * 60 * 60 * 1000
+    }
+
+    const periodLabels = {
+      '1d': '1 Day',
+      '7d': '7 Days',
+      '15d': '15 Days',
+      '30d': '30 Days',
+      '180d': '6 Months',
+      '365d': '1 Year',
+      'all': 'All Time'
+    } as const
+
+    // 修改计算属性
+    const currentStats = computed(() => {
+      return statsData[selectedPeriod.value as keyof typeof statsData]
     })
 
     onMounted(async () => {
+      const cache = localStorage.getItem('__gasStats__')
+      if (cache) {
+        const { timeout, stats: cachedStats } = JSON.parse(cache)
+        if (timeout > new Date().getTime()) {
+          // 使用 Object.assign 来更新 reactive 对象
+          Object.assign(statsData, cachedStats)
+          loading.value = false
+          return 
+        } else {
+          localStorage.removeItem('__gasStats__')
+        }
+      }
+
       try {
-        const txInfo = await getRpcClient('Monad Testnet').getHistoryTransactions(0)
-        stats.value.totalGasUsed = txInfo.transactions.reduce((acc, tx) => acc + tx.gasUsed, 0)
-        stats.value.totalGasFee = txInfo.transactions.reduce((acc, tx) => acc + tx.transactionFee, 0)
-        stats.value.transactionCount = txInfo.transactions.length
-        stats.value.averageGasPrice = stats.value.totalGasUsed / stats.value.transactionCount
+        const now = new Date().getTime()
+        const txIterator = getRpcClient('Monad Testnet').getHistoryTransactions(0)
+        for await (const transactions of txIterator) {
+          for (const tx of transactions) {
+            const txTime = tx.timestamp
+            const timeDiff = now - txTime
+            const txHour = new Date(txTime).getHours()
+            const timeSlot = getTimeSlot(txHour)
+
+            // 更新各个时间段的统计
+            if (timeDiff <= timeRanges['1d']) {
+              updatePeriodStats('1d', tx, timeSlot)
+            }
+            if (timeDiff <= timeRanges['7d']) {
+              updatePeriodStats('7d', tx, timeSlot)
+            }
+            if (timeDiff <= timeRanges['15d']) {
+              updatePeriodStats('15d', tx, timeSlot)
+            }
+            if (timeDiff <= timeRanges['30d']) {
+              updatePeriodStats('30d', tx, timeSlot)
+            }
+            if (timeDiff <= timeRanges['180d']) {
+              updatePeriodStats('180d', tx, timeSlot)
+            }
+            if (timeDiff <= timeRanges['365d']) {
+              updatePeriodStats('365d', tx, timeSlot)
+            }
+            
+            // 所有时间的统计
+            updatePeriodStats('all', tx, timeSlot)
+          }
+        }
+
+        // 计算所有时间段的平均 gas 价格
+        Object.keys(statsData).forEach((period) => {
+          if (statsData[period].transactionCount > 0) {
+            statsData[period].averageGasPrice = 
+              statsData[period].totalGasUsed / statsData[period].transactionCount
+          }
+        })
+
         loading.value = false
+        
+        // 缓存数据
+        setTimeout(() => { 
+          localStorage.setItem("__gasStats__", JSON.stringify({
+            stats: statsData,
+            timestamp: new Date().getTime() + 1000 * 60 * 30
+          }))
+        }, 0)
       } catch (error) {
         console.error('Failed to fetch gas stats:', error)
         loading.value = false
       }
     })
+
+    // 在 return 语句之前添加这些辅助函数
+    const getTimeSlot = (hour: number): string => {
+      if (hour < 3) return '0-3'
+      if (hour < 6) return '3-6'
+      if (hour < 9) return '6-9'
+      if (hour < 12) return '9-12'
+      if (hour < 15) return '12-15'
+      if (hour < 18) return '15-18'
+      if (hour < 21) return '18-21'
+      return '21-24'
+    }
+
+    const updatePeriodStats = (period: string, tx: any, timeSlot: string) => {
+      statsData[period].totalGasUsed += tx.gasUsed
+      statsData[period].totalGasFee += tx.transactionFee
+      statsData[period].transactionCount += 1
+      
+      // 更新时段统计
+      statsData[period].hourlyStats[timeSlot].transactions += 1
+      statsData[period].hourlyStats[timeSlot].gasUsed += tx.gasUsed
+      statsData[period].hourlyStats[timeSlot].gasFee += tx.transactionFee
+    }
 
     return () => (
       <CyberCard>
@@ -34,21 +265,55 @@ export default defineComponent({
           <div class="flex justify-center items-center h-20">Loading...</div>
         ) : (
           <div>
-            <h3 class="text-xl text-white mb-4">Gas Overview</h3>
-            <div class="grid grid-cols-3 gap-4">
-              <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
-                <div class="text-sm text-gray-300">Total Gas Used</div>
-                <div class="text-xl text-white mt-1">{stats.value.totalGasUsed.toLocaleString()}</div>
+            <div class="flex justify-between items-center mb-4">
+              <div class="flex items-center">
+                <h3 class="text-xl text-white">Gas Overview</h3>
+                <div class="ml-2 text-gray-500">{"Update every 30 minutes"}</div>
               </div>
-              <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
-                <div class="text-sm text-gray-300">Total Gas Fee</div>
-                <div class="text-xl text-white mt-1">{(stats.value.totalGasFee / 1e18).toFixed(4)} {networks['Monad Testnet'].nativeCurrency.symbol}</div>
-              </div>
-              <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
-                <div class="text-sm text-gray-300">Transaction Count</div>
-                <div class="text-xl text-white mt-1">{stats.value.transactionCount}</div>
+              <div class="flex space-x-2">
+                {Object.entries(periodLabels).map(([period, label]) => (
+                  <button
+                    key={period}
+                    class={`px-3 py-1 rounded text-sm transition-colors ${
+                      selectedPeriod.value === period
+                        ? 'bg-purple-300 text-purple-900'
+                        : 'bg-purple-700 bg-opacity-20 text-gray-300 hover:bg-opacity-30'
+                    }`}
+                    onClick={() => {
+                      selectedPeriod.value = period as keyof typeof statsData
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
+                <div class="text-sm text-gray-300">Gas Used</div>
+                <div class="text-lg text-white">
+                  {currentStats.value.totalGasUsed.toLocaleString()}
+                </div>
+              </div>
+              <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
+                <div class="text-sm text-gray-300">Gas Fee</div>
+                <div class="text-lg text-white">
+                  {(currentStats.value.totalGasFee / 1e18).toFixed(4)} {networks['Monad Testnet'].nativeCurrency.symbol}
+                </div>
+              </div>
+              <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
+                <div class="text-sm text-gray-300">Transactions</div>
+                <div class="text-lg text-white">
+                  {currentStats.value.transactionCount}
+                </div>
+              </div>
+            </div>
+            {!loading.value && (
+              <div class="mt-8">
+                <h4 class="text-lg text-white mb-4">24-Hour Distribution</h4>
+                <HourlyDistributionChart data={currentStats.value.hourlyStats} />
+              </div>
+            )}
           </div>
         )}
       </CyberCard>
