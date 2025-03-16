@@ -1,3 +1,4 @@
+import { contractConfig } from '@/config/contract'
 import { ethers } from 'ethers'
 
 // 合约 ABI
@@ -8,14 +9,14 @@ const FACTORY_ABI = [
   "event ContractCreated(address indexed owner, address indexed contractAddress, address indexed token, address[] heirs, uint256[] amounts, uint256[] percentages)"
 ]
 
-const USER_CONTRACT_ABI = [
-  "function approve(address token, uint256 amount) external",
-  "function unapprove(address token) external",
-  "function claim(address token) external",
-  "event TokenApproved(address indexed token, uint256 amount)",
-  "event TokenUnapproved(address indexed token)",
-  "event TokensClaimed(address indexed heir, address indexed token, uint256 amount)"
-]
+// const USER_CONTRACT_ABI = [
+//   "function approve(address token, uint256 amount) external",
+//   "function unapprove(address token) external",
+//   "function claim(address token) external",
+//   "event TokenApproved(address indexed token, uint256 amount)",
+//   "event TokenUnapproved(address indexed token)",
+//   "event TokensClaimed(address indexed heir, address indexed token, uint256 amount)"
+// ]
 
 export interface ContractInfo {
   contractAddress: string
@@ -27,33 +28,52 @@ export interface ContractInfo {
 }
 
 class InheritanceContracts {
-  constructor(private contractAddress: string) {}
+  private provider: ethers.BrowserProvider
+  private signer: ethers.Signer | null = null
+
+  constructor(private contractAddress: string) {
+    this.provider = new ethers.BrowserProvider(window.ethereum)
+  }
+
+  private async getSigner() {
+    if (!this.signer) {
+      this.signer = await this.provider.getSigner()
+    }
+    return this.signer
+  }
 
   async createContract(token: string, heirs: string[], amounts: string[], percentages: string[]) {
-    // @ts-ignore
-    const provider = ethers.BrowserProvider(window.ethereum)
-    const factory = new ethers.Contract(this.contractAddress, FACTORY_ABI, provider)
+    const signer = await this.getSigner()
+    const factory = new ethers.Contract(this.contractAddress, FACTORY_ABI, signer)
     const tx = await factory.createContract(token, heirs, amounts, percentages)
     const receipt = await tx.wait()
     return receipt.contractAddress
   }
 
   async getUserContracts() {
-    const userContract = new ethers.Contract(this.contractAddress, USER_CONTRACT_ABI)
-    const contracts = await userContract.getUserContracts()
-    return contracts
+    const factory = new ethers.Contract(this.contractAddress, FACTORY_ABI, this.provider)
+    const signer = await this.getSigner()
+    const address = await signer.getAddress()
+    return await factory.getUserContracts(address)
   }
 
   async getContractsByHeir() {
-    const userContract = new ethers.Contract(this.contractAddress, USER_CONTRACT_ABI)
-    const contracts = await userContract.getContractsByHeir()
-    return contracts
+    const factory = new ethers.Contract(this.contractAddress, FACTORY_ABI, this.provider)
+    const signer = await this.getSigner()
+    const address = await signer.getAddress()
+    return await factory.getContractsByHeir(address)
   }
   
   
 }
 
-export const getInheritanceContract = (contractAddress: string) => {
+export const getInheritanceContract = (chainId: number): InheritanceContracts => {
+  // @ts-ignore
+  if (!contractConfig[chainId]) {
+    throw new Error("Contract address not found")
+  }
+  // @ts-ignore
+  const contractAddress = contractConfig[chainId].address
   return new InheritanceContracts(contractAddress)
 }
 

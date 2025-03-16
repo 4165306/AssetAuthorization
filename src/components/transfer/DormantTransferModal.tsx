@@ -1,6 +1,9 @@
 import { defineComponent, ref, reactive, nextTick } from 'vue'
 import { NModal, NButton, NInput, useMessage, NIcon } from 'naive-ui'
 import { TrashBin, Add } from '@vicons/ionicons5'
+import { getChainId } from '@/utils/ethers'
+import { getInheritanceContract } from '@/utils/contracts'
+import { ethers } from 'ethers'
 
 interface HeirConfig {
   address: string
@@ -101,7 +104,31 @@ export default defineComponent({
 
       try {
         loading.value = true
-        // TODO: 调用合约部署逻辑
+        const contract = getInheritanceContract(await getChainId())
+        
+        // 准备数据
+        const heirAddresses = heirs.map(heir => heir.address)
+        const amounts = heirs.map(heir => 
+          heir.amount !== '0' ? ethers.parseUnits(heir.amount, props.tokenDecimals).toString() : '0'
+        )
+        const percentages = heirs.map(heir => 
+          heir.percentage > 0 ? (heir.percentage * 100).toString() : '0'
+        )
+
+        // 打印调试信息
+        console.log('Deploying contract with:', {
+          token: props.tokenAddress,
+          heirs: heirAddresses,
+          amounts,
+          percentages
+        })
+
+        await contract.createContract(
+          props.tokenAddress,
+          heirAddresses,
+          amounts,
+          percentages
+        )
         message.success('Contract deployed successfully')
         emit('update:show', false)
       } catch (error) {

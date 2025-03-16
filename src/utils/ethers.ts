@@ -28,6 +28,7 @@ export interface RpcClient {
   changeNetwork(chainId: number): Promise<string>;
   getERC20Tokens(): Promise<Token['TOKEN']['data']>;
   verifyContract(options: VerifyContractOptions): Promise<boolean>;
+  getTokenInfo(tokenAddress: string): Promise<TokenInfo>
 }
 
 export interface Transaction {
@@ -95,6 +96,21 @@ export interface Token {
     }[];
     total: number;
   }
+}
+
+export interface TokenInfo {
+  contractAddress: string
+  createdTime: number
+  decimals: number
+  holders: number
+  imageURL: string
+  name: string
+  price: string
+  symbol: string
+  totalSupply: string
+  transfers: number
+  verified: boolean
+  website: string
 }
 
 class MonadRpc extends AbstructEthers implements RpcClient {
@@ -236,6 +252,27 @@ class MonadRpc extends AbstructEthers implements RpcClient {
     throw new Error(data.message)
   }
 
+  async getTokenInfo(tokenAddress: string): Promise<TokenInfo> {
+    const api = `/testnet/api/tokenDetail?contractAddress=${tokenAddress}`
+    const signure = this.getAppidAndSecret(api)
+    
+    const response = await fetch(proxy.proxy.url + api, {
+      headers: {
+        "x-app-id": signure.appId,
+        "x-api-signature": signure.secret,
+        "x-api-timestamp": signure.timestamp,
+        "P-PROXY-HOST": networks["Monad Testnet"].apiUrl
+      }
+    })
+
+    const data = await response.json()
+    if (data.code !== 0) {
+      throw new Error(data.message || 'Failed to fetch token info')
+    }
+
+    return data.result
+  }
+
   /**
    * request_full_url like this: /testnet/api/account/tokenPortfolio?address=${address}&pageSize=5&pageIndex=1
    */
@@ -266,3 +303,11 @@ export function getRpcClient(chainName: keyof typeof networks = 'Monad Testnet')
   }
 }
 
+export async function getChainId(): Promise<number> {
+  let chainId = window.ethereum.chainId
+  if (!chainId) {
+    const provider = new BrowserProvider(window.ethereum)
+    chainId = await provider.send("eth_chainId", [])
+  }
+  return parseInt(chainId, 16)
+}

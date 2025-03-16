@@ -45,19 +45,16 @@ export default defineComponent({
               {data.value?.map(asset => (
                 <div v-show={showAssets && asset.contractAddress != '0x0000000000000000000000000000000000000000'} key={asset.contractAddress} class="bg-opacity-20 bg-purple-900 rounded-lg p-4 flex items-center justify-between">
                   <div class="flex items-center space-x-4">
-                    <img src={asset.imageURL} class="w-10 h-10 rounded-full" alt={asset.symbol} />
+                    <img src={asset.imageURL || '/token-default.svg'} class="w-10 h-10 rounded-full" alt={asset.symbol} />
                     <div>
                       <div class="font-medium text-white">{asset.symbol}</div>
                       <div class="text-sm text-gray-400">{asset.contractAddress}</div>
                     </div>
                   </div>
 
-                  <div class="text-right">
+                  <div class="text-right w-30">
                     <div class="text-white">
-                      {asset.balance.length > 13 ? asset.balance.slice(0,10) + '...' : asset.balance}
-                    </div>
-                    <div class="text-sm text-gray-400">
-                      {asset.decimal} decimals
+                      {asset.balance.length > 10 ? asset.balance.slice(0,10) : asset.balance}
                     </div>
                   </div>
 
