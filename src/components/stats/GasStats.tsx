@@ -169,7 +169,7 @@ export default defineComponent({
       return statsData[selectedPeriod.value as keyof typeof statsData]
     })
 
-    onMounted(async () => {
+    const updateGasStats = async () => {
       const cache = localStorage.getItem('__gasStats__')
       if (cache) {
         const { timeout, stats: cachedStats } = JSON.parse(cache)
@@ -232,14 +232,16 @@ export default defineComponent({
         setTimeout(() => { 
           localStorage.setItem("__gasStats__", JSON.stringify({
             stats: statsData,
-            timeout: new Date().getTime() + 1000 * 60 * 30
+            timeout: new Date().getTime() + cacheTimeout.value * 1000
           }))
         }, 0)
       } catch (error) {
         console.error('Failed to fetch gas stats:', error)
         loading.value = false
       }
-    })
+    }
+
+    onMounted(updateGasStats)
 
     // 在 return 语句之前添加这些辅助函数
     const getTimeSlot = (hour: number): string => {
@@ -272,6 +274,7 @@ export default defineComponent({
       }
       localStorage.setItem('__gasStats_timeout__', cacheTimeout.value.toString())
       showSettingsModal.value = false
+      updateGasStats()
       message.success('设置已保存')
     }
 

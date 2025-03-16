@@ -7,7 +7,7 @@ export const networks =
       apiUrl: 'https://monad-api.blockvision.org',
       nativeCurrency: {
         name: 'Monad',
-        symbol: 'MOD',
+        symbol: 'MON',
         decimals: 18
       },
     }
