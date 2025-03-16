@@ -1,0 +1,447 @@
+/* 重置和基础样式 */
+@import "tailwindcss";
+
+body {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #000;
+  color: #fff;
+}
+
+/* 赛博朋克背景 */
+.cyber-bg {
+  background: 
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.7)),
+    radial-gradient(circle at 50% 50%, rgba(76, 0, 255, 0.1), transparent 50%),
+    radial-gradient(circle at 100% 0%, rgba(255, 0, 136, 0.1), transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(0, 255, 255, 0.1), transparent 50%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 网格动画效果 */
+.cyber-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(90deg, rgba(76, 0, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(76, 0, 255, 0.1) 1px, transparent 1px);
+  background-size: 30px 30px;
+  animation: grid 20s linear infinite;
+  transform-origin: 50% 50%;
+  transform: perspective(1000px) rotateX(60deg);
+  pointer-events: none;
+}
+
+/* 浮动粒子效果 */
+.cyber-bg::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 70% 40%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 40% 60%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 60% 80%, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 100px 100px;
+  animation: float 10s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* 玻璃态卡片 */
+.glass-card {
+  background: rgba(20, 20, 40, 0.5) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(76, 0, 255, 0.2) !important;
+  box-shadow: 
+    0 4px 24px -1px rgba(76, 0, 255, 0.2),
+    0 0 16px -2px rgba(0, 255, 255, 0.1) !important;
+}
+
+.glass-card:hover {
+  border-color: rgba(76, 0, 255, 0.4) !important;
+  box-shadow: 
+    0 8px 32px -1px rgba(76, 0, 255, 0.3),
+    0 0 24px -2px rgba(0, 255, 255, 0.2) !important;
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+/* 霓虹文字效果 */
+.neon-text {
+  color: #fff;
+  text-shadow: 
+    0 0 5px rgba(255, 255, 255, 0.8),
+    0 0 10px rgba(76, 0, 255, 0.8),
+    0 0 15px rgba(76, 0, 255, 0.6),
+    0 0 20px rgba(76, 0, 255, 0.4);
+}
+
+/* 动画关键帧 */
+@keyframes grid {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 30px 30px;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+/* 新增遗产管理相关样式 */
+.asset-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.asset-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(45deg, transparent, rgba(147, 51, 234, 0.1));
+  border-radius: 50%;
+  transform: translate(50%, -50%);
+}
+
+.legacy-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.legacy-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent,
+    rgba(147, 51, 234, 0.5),
+    transparent
+  );
+}
+
+.cyber-tabs .n-tabs-tab {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.cyber-tabs .n-tabs-tab.n-tabs-tab--active {
+  color: #fff !important;
+}
+
+.cyber-tabs .n-tabs-tab:hover {
+  color: #fff !important;
+}
+
+.cyber-tabs .n-tabs-bar {
+  background-color: rgba(147, 51, 234, 0.5) !important;
+}
+
+/* 全息投影效果 */
+.hologram {
+  position: relative;
+  overflow: hidden;
+}
+
+.hologram::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(45deg, transparent 40%, rgba(147, 51, 234, 0.1) 45%, transparent 50%),
+    linear-gradient(-45deg, transparent 40%, rgba(147, 51, 234, 0.1) 45%, transparent 50%);
+  background-size: 30px 30px;
+  animation: hologram 3s linear infinite;
+}
+
+@keyframes hologram {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 30px 30px;
+  }
+}
+
+/* 特性卡片 */
+.feature-card {
+  background: rgba(76, 0, 255, 0.1);
+  border: 1px solid rgba(147, 51, 234, 0.2);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  background: rgba(76, 0, 255, 0.2);
+  border-color: rgba(147, 51, 234, 0.4);
+  transform: translateY(-2px);
+}
+
+/* 选择器样式 */
+.cyber-select .n-base-selection {
+  background: rgba(20, 20, 40, 0.95) !important;
+  border: 1px solid rgba(147, 51, 234, 0.3) !important;
+  height: 36px !important;
+}
+
+.cyber-select .n-base-selection:hover {
+  border-color: rgba(147, 51, 234, 0.5) !important;
+}
+
+.cyber-select .n-base-selection-label,
+.cyber-select .n-base-selection-input,
+.cyber-select .n-base-selection-input__content {
+  color: #fff !important;
+  background: transparent !important;
+}
+
+.cyber-select .n-base-selection-placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+  line-height: 36px !important;
+}
+
+.cyber-select .n-base-selection__border,
+.cyber-select .n-base-selection__state-border {
+  border: none !important;
+}
+
+/* 按钮悬停效果增强 */
+.cyber-button {
+  background: linear-gradient(45deg, #4e4eff, #8b4eff) !important;
+  border: none !important;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease !important;
+}
+
+.cyber-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: 0.5s;
+}
+
+.cyber-button:hover::before {
+  left: 100%;
+}
+
+/* 链接样式 */
+a {
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+a:hover {
+  text-shadow: 0 0 8px rgba(147, 51, 234, 0.6);
+}
+
+/* 表格样式 */
+.cyber-table .n-data-table {
+  background: transparent !important;
+}
+
+.cyber-table .n-data-table-th {
+  background: rgba(76, 0, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(147, 51, 234, 0.3) !important;
+  padding: 12px 16px !important;
+}
+
+.cyber-table .n-data-table-td {
+  background: rgba(20, 20, 40, 0.4) !important;
+  border-bottom: 1px solid rgba(147, 51, 234, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  padding: 12px 16px !important;
+}
+
+.cyber-table .n-data-table-tr:hover .n-data-table-td {
+  background: rgba(76, 0, 255, 0.2) !important;
+}
+
+/* 空状态样式 */
+.cyber-table .n-data-table-empty {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 加载状态样式 */
+.cyber-table .n-data-table-loading {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 分页器样式 */
+.cyber-table .n-pagination {
+  background: transparent !important;
+}
+
+.cyber-table .n-pagination .n-pagination-item {
+  background: rgba(76, 0, 255, 0.1) !important;
+  border: 1px solid rgba(147, 51, 234, 0.2) !important;
+  color: #fff !important;
+}
+
+.cyber-table .n-pagination .n-pagination-item:hover {
+  background: rgba(76, 0, 255, 0.2) !important;
+  border-color: rgba(147, 51, 234, 0.4) !important;
+}
+
+.cyber-table .n-pagination .n-pagination-item--active {
+  background: rgba(76, 0, 255, 0.3) !important;
+  border-color: rgba(147, 51, 234, 0.5) !important;
+}
+
+/* 次要按钮样式 */
+.cyber-button-secondary {
+  background: rgba(76, 0, 255, 0.1) !important;
+  border: 1px solid rgba(147, 51, 234, 0.3) !important;
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+
+.cyber-button-secondary:hover {
+  background: rgba(76, 0, 255, 0.2) !important;
+  border-color: rgba(147, 51, 234, 0.5) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+/* 标签样式 */
+.cyber-tag {
+  background: transparent !important;
+  border: 1px solid currentColor !important;
+}
+
+/* 导航栏样式 */
+.cyber-nav {
+  background: rgba(20, 20, 40, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(147, 51, 234, 0.2);
+}
+
+/* 使用更强的选择器 */
+.cyber-nav .n-menu {
+  --n-item-text-color: rgb(229 231 235) !important;
+  --n-item-text-color-hover: white !important;
+  --n-item-text-color-active: white !important;
+  --n-item-color-active: rgba(76, 0, 255, 0.3) !important;
+  background-color: transparent !important;
+}
+
+.cyber-nav .n-menu .n-menu-item {
+  color: rgb(229 231 235) !important;
+}
+
+.cyber-nav .n-menu .n-menu-item:hover {
+  background-color: rgba(139, 92, 246, 0.1) !important;
+}
+
+.cyber-nav .n-menu .n-menu-item--selected .n-menu-item-content-header {
+  color: rgb(147, 51, 234) !important; /* 紫色主题色 */
+  font-weight: 500;
+}
+
+.cyber-nav .n-menu .n-menu-item--selected {
+  background-color: rgba(147, 51, 234, 0.1) !important;
+  border-bottom: 2px solid rgb(147, 51, 234) !important;
+}
+
+/* 下拉菜单样式 */
+.n-dropdown-menu {
+  background: rgba(20, 20, 40, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(147, 51, 234, 0.3) !important;
+}
+
+.n-dropdown-option {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.n-dropdown-option:hover {
+  background: rgba(76, 0, 255, 0.2) !important;
+}
+
+.n-dropdown-option--disabled {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* 状态指示器动画 */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(74, 222, 128, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+  }
+}
+
+.bg-green-400 {
+  animation: pulse 2s infinite;
+}
+
+/* 修复标签文字颜色 */
+.n-base-selection .n-base-selection-label,
+.n-base-selection .n-base-selection-input,
+.n-base-selection-input__content {
+  color: #fff !important;
+  background: transparent !important;
+}
+
+/* 确保下拉菜单样式正确 */
+.n-select-menu {
+  background: rgba(20, 20, 40, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(147, 51, 234, 0.3) !important;
+}
+
+.n-select-option {
+  color: #fff !important;
+}
+
+.n-select-option:hover {
+  background: rgba(76, 0, 255, 0.2) !important;
+}
+
+/* 隐藏数字输入框的调节按钮 */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
