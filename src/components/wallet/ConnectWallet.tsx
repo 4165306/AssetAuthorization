@@ -3,12 +3,14 @@ import { NButton, NSpace } from 'naive-ui'
 import { useRouter } from 'vue-router'
 import { useWalletStore } from '@/stores/wallet'
 import CyberCard from '../common/CyberCard'
+import { useMessage } from 'naive-ui'
 
 export default defineComponent({
   name: 'ConnectWallet',
   setup() {
     const router = useRouter()
     const walletStore = useWalletStore()
+    const message = useMessage()
 
     const features = [
       {
@@ -45,6 +47,7 @@ export default defineComponent({
         }
       } catch (error) {
         console.error('Failed to connect wallet:', error)
+        message.error((error as Error).message)
       }
     }
 
