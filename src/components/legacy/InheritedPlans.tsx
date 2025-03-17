@@ -25,13 +25,19 @@ export default defineComponent({
               default: () => (
                 <div class="p-6">
                   <h2 class="text-2xl text-white mb-6 font-bold">Inherited Plans</h2>
-                  <div class="space-y-4">
+                  <div class="grid grid-cols-3 gap-4">
                     {props.contracts?.length > 0 ? (
-                      props.contracts.map((contract, index) => (
-                        <ContractCard key={index} contract={contract} />
+                      props.contracts.map((contract, _) => (
+                        <ContractCard 
+                          key={contract.contractAddress} 
+                          contract={contract}
+                          isInherited={true} 
+                        />
                       ))
                     ) : (
-                      <NEmpty description="No inherited plans found" />
+                      <div class="col-span-3">
+                        <NEmpty description="No inherited plans found" />
+                      </div>
                     )}
                   </div>
                 </div>

@@ -5,15 +5,18 @@ import { Settings } from '@vicons/ionicons5'
 import CyberCard from '../common/CyberCard'
 import { networks } from '@/config/network'
 import HourlyDistributionChart from './HourlyDistributionChart'
+import { useWalletStore } from '@/stores/wallet'
 
 export default defineComponent({
   name: 'GasStats',
   setup() {
     const message = useMessage()
     const loading = ref(true)
+    const progress = ref(0)
     const selectedPeriod = ref<keyof typeof statsData>('all')
     const showSettingsModal = ref(false)
     const cacheTimeout = ref(180)  // 默认3分钟 (180秒)
+    const batchSize = 100
 
     // 使用 reactive 来处理复杂的状态数据
     const statsData = reactive<{
@@ -169,12 +172,13 @@ export default defineComponent({
       return statsData[selectedPeriod.value as keyof typeof statsData]
     })
 
+    const wallet = useWalletStore()
+
     const updateGasStats = async () => {
-      const cache = localStorage.getItem('__gasStats__')
+      const cache = localStorage.getItem(`__gasStats_${wallet.address}__`)
       if (cache) {
         const { timeout, stats: cachedStats } = JSON.parse(cache)
         if (timeout > new Date().getTime()) {
-          // 使用 Object.assign 来更新 reactive 对象
           Object.assign(statsData, cachedStats)
           loading.value = false
           return 
@@ -186,39 +190,47 @@ export default defineComponent({
       try {
         const now = new Date().getTime()
         const txIterator = getRpcClient('Monad Testnet').getHistoryTransactions(0)
+        let processedTxs = 0
+        
         for await (const transactions of txIterator) {
+          let batchCounter = 0
+          
           for (const tx of transactions) {
             const txTime = tx.timestamp
             const timeDiff = now - txTime
             const txHour = new Date(txTime).getHours()
             const timeSlot = getTimeSlot(txHour)
 
-            // 更新各个时间段的统计
-            if (timeDiff <= timeRanges['1d']) {
-              updatePeriodStats('1d', tx, timeSlot)
-            }
-            if (timeDiff <= timeRanges['7d']) {
-              updatePeriodStats('7d', tx, timeSlot)
-            }
-            if (timeDiff <= timeRanges['15d']) {
-              updatePeriodStats('15d', tx, timeSlot)
-            }
-            if (timeDiff <= timeRanges['30d']) {
-              updatePeriodStats('30d', tx, timeSlot)
-            }
-            if (timeDiff <= timeRanges['180d']) {
-              updatePeriodStats('180d', tx, timeSlot)
-            }
-            if (timeDiff <= timeRanges['365d']) {
-              updatePeriodStats('365d', tx, timeSlot)
-            }
-            
-            // 所有时间的统计
+            // Update stats for each time period
+            Object.entries(timeRanges).forEach(([period, range]) => {
+              if (timeDiff <= range) {
+                updatePeriodStats(period, tx, timeSlot)
+              }
+            })
             updatePeriodStats('all', tx, timeSlot)
+
+            batchCounter++
+            processedTxs++
+
+            // Update UI after processing batchSize transactions
+            if (batchCounter >= batchSize) {
+              // Calculate averages for all periods
+              Object.keys(statsData).forEach((period) => {
+                if (statsData[period].transactionCount > 0) {
+                  statsData[period].averageGasPrice = 
+                    statsData[period].totalGasUsed / statsData[period].transactionCount
+                }
+              })
+
+              // Force component update
+              progress.value = processedTxs
+              await new Promise(resolve => setTimeout(resolve, 0)) // Let UI update
+              batchCounter = 0
+            }
           }
         }
 
-        // 计算所有时间段的平均 gas 价格
+        // Final update
         Object.keys(statsData).forEach((period) => {
           if (statsData[period].transactionCount > 0) {
             statsData[period].averageGasPrice = 
@@ -228,9 +240,9 @@ export default defineComponent({
 
         loading.value = false
         
-        // 缓存数据
+        // Cache data
         setTimeout(() => { 
-          localStorage.setItem("__gasStats__", JSON.stringify({
+          localStorage.setItem(`__gasStats_${wallet.address}__`, JSON.stringify({
             stats: statsData,
             timeout: new Date().getTime() + cacheTimeout.value * 1000
           }))
@@ -289,7 +301,14 @@ export default defineComponent({
     return () => (
       <CyberCard>
         {loading.value ? (
-          <div class="flex justify-center items-center h-20">Loading...</div>
+          <div class="flex flex-col justify-center items-center h-20">
+            <div>Processing transactions...</div>
+            {progress.value > 0 && (
+              <div class="text-sm text-gray-400">
+                Processed {progress.value} transactions
+              </div>
+            )}
+          </div>
         ) : (
           <div>
             <div class="flex justify-between items-center mb-4">

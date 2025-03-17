@@ -1,9 +1,10 @@
 import { defineComponent, ref, reactive, nextTick } from 'vue'
-import { NModal, NButton, NInput, useMessage, NIcon } from 'naive-ui'
+import { NModal, NButton, NInput, useMessage, NIcon, NDatePicker } from 'naive-ui'
 import { TrashBin, Add } from '@vicons/ionicons5'
 import { getChainId } from '@/utils/ethers'
 import { getInheritanceContract } from '@/utils/contracts'
 import { ethers } from 'ethers'
+import './DormantTransferModal.css'
 
 interface HeirConfig {
   address: string
@@ -29,6 +30,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const message = useMessage()
     const loading = ref(false)
+    const unlockTime = ref(Math.floor(Date.now() / 1000) + 1)
 
     // 继承人配置列表
     const heirs = reactive<HeirConfig[]>([
@@ -56,6 +58,12 @@ export default defineComponent({
 
     // 验证配置
     const validateConfig = (): boolean => {
+      // 验证解锁时间
+      if (unlockTime.value <= Date.now() / 1000) {
+        message.error('Unlock time must be in the future')
+        return false
+      }
+
       // 检查地址是否都填写
       if (heirs.some(heir => !heir.address)) {
         message.error('Please fill in all heir addresses')
@@ -120,14 +128,16 @@ export default defineComponent({
           token: props.tokenAddress,
           heirs: heirAddresses,
           amounts,
-          percentages
+          percentages,
+          unlockTime: unlockTime.value
         })
 
         await contract.createContract(
           props.tokenAddress,
           heirAddresses,
           amounts,
-          percentages
+          percentages,
+          unlockTime.value
         )
         message.success('Contract deployed successfully')
         emit('update:show', false)
@@ -153,6 +163,25 @@ export default defineComponent({
       '--n-padding': '0 12px'
     }
 
+    const datePickerStyle = {
+      ...inputStyle,
+      // 面板样式
+      '--n-panel-color': '#1f2937',
+      '--n-panel-border-color': 'rgba(147, 51, 234, 0.2)',
+      '--n-item-color': '#fff',
+      '--n-item-color-hover': 'rgba(147, 51, 234, 0.1)',
+      '--n-item-color-active': 'rgba(147, 51, 234, 0.2)',
+      '--n-calendar-item-text-color': '#fff',
+      '--n-panel-action-padding': '8px',
+      '--n-panel-box-shadow': '0 0 0 1px rgba(147, 51, 234, 0.1)',
+      '--n-item-text-color': '#fff',
+      '--n-item-text-color-active': '#fff',
+      '--n-item-color-disabled': 'rgba(255, 255, 255, 0.1)',
+      '--n-item-text-color-disabled': 'rgba(255, 255, 255, 0.3)'
+    }
+
+    
+
     return () => (
       <NModal show={props.show} onUpdateShow={(v) => emit('update:show', v)}>
         <div class="bg-gray-900 p-6 rounded-lg w-[50vh]">
@@ -173,6 +202,22 @@ export default defineComponent({
                 disabled
                 class="cyber-input"
                 style={inputStyle}
+              />
+            </div>
+
+            {/* Add Unlock Time Picker */}
+            <div class="mb-6">
+              <label class="text-gray-400 block mb-2">Unlock Time</label>
+              <NDatePicker
+                type="datetime"
+                value={unlockTime.value * 1000}
+                onUpdateValue={(timestamp) => {
+                  unlockTime.value = timestamp ? Math.floor(timestamp / 1000) : 0
+                }}
+                class="cyber-input w-full custom-date-picker custom-date-picker-input"
+                style={datePickerStyle}
+                clearable={false}
+                isDateDisabled={(timestamp: number) => timestamp < Date.now()}
               />
             </div>
 
@@ -276,4 +321,4 @@ export default defineComponent({
       </NModal>
     )
   }
-}) 
+})

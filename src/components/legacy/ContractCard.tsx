@@ -1,7 +1,14 @@
-import { defineComponent, type PropType } from 'vue'
-import CyberCard from '@/components/common/CyberCard'
+import { defineComponent, ref, type PropType, computed, onMounted } from 'vue'
+import { NButton, NPopover, useMessage } from 'naive-ui'
+import { formatUnits } from 'ethers'
+import { UserInheritanceContract } from '@/utils/contracts'
+import { getRpcClient } from '@/utils/ethers'
 import type { ContractInfo } from '@/utils/contracts'
 import type { TokenInfo } from '@/utils/ethers'
+
+const formatAddress = (address: string, length: number = 10) => {
+  return address.slice(0, length) + '...' + address.slice(-length)
+}
 
 export default defineComponent({
   name: 'ContractCard',
@@ -9,81 +16,175 @@ export default defineComponent({
     contract: {
       type: Object as PropType<ContractInfo & { tokenInfo?: TokenInfo }>,
       required: true
+    },
+    isInherited: {
+      type: Boolean,
+      default: false
     }
   },
   setup(props) {
-    return () => {
-      if (!props.contract || !props.contract.heirs) return null;
-      
-      // 确保数组是字符串数组
-      const heirs = Array.isArray(props.contract.heirs) ? props.contract.heirs.map(String) : [];
-      const amounts = Array.isArray(props.contract.amounts) ? props.contract.amounts.map(String) : [];
-      const percentages = Array.isArray(props.contract.percentages) ? props.contract.percentages.map(String) : [];
-      
-      return (
-        <CyberCard class="mb-4">
-          <div class="p-4">
-            <div class="flex items-start gap-4 mb-4">
-              {/* Token Info */}
-              <div class="flex-shrink-0">
-                <img 
-                  src={props.contract.tokenInfo?.imageURL || '/token-default.svg'} 
-                  alt={props.contract.tokenInfo?.symbol || 'Token'} 
-                  class="w-12 h-12 rounded-full"
-                />
-              </div>
-              
-              <div class="flex-grow">
-                <div class="flex justify-between items-start">
-                  <div>
-                    <h4 class="text-lg text-white mb-1">
-                      {props.contract.tokenInfo?.name || 'Unknown Token'}
-                      <span class="ml-2 text-sm text-gray-400">
-                        {props.contract.tokenInfo?.symbol}
-                      </span>
-                    </h4>
-                    <p class="text-sm text-gray-400 mb-1">
-                      Contract: {props.contract.contractAddress}
-                    </p>
-                    {props.contract.tokenInfo && (
-                      <div class="flex gap-4 text-sm text-purple-300">
-                        <span>Decimals: {props.contract.tokenInfo.decimals}</span>
-                        <span>Holders: {props.contract.tokenInfo.holders.toLocaleString()}</span>
-                        <span>Transfers: {props.contract.tokenInfo.transfers.toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
-                  {props.contract.tokenInfo?.verified && (
-                    <div class="text-green-400 text-sm">Verified</div>
-                  )}
-                </div>
-              </div>
-            </div>
+    const message = useMessage()
+    const loading = ref(false)
+    const unapprovingLoading = ref(false)
+    const showAllHeirs = ref(false)
+    const tokenInfo = ref<TokenInfo | null>(null)
+    const unlockTime = ref<number>(0)
 
-            {/* Heirs List */}
-            {heirs.length > 0 && (
-              <div class="space-y-2 mt-4">
-                {heirs.map((heir, index) => (
-                  <div key={index} class="flex justify-between items-center py-2 border-t border-purple-800/20">
-                    <div class="text-purple-300">{heir}</div>
-                    <div class="flex items-center space-x-4">
-                      {amounts[index] !== '0' ? (
-                        <span class="text-white">
-                          Amount: {amounts[index]} {props.contract.tokenInfo?.symbol}
-                        </span>
-                      ) : (
-                        <span class="text-white">
-                          Percentage: {Number(percentages[index] || 0)/100}%
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+    onMounted(async () => {
+      try {
+        const rpc = getRpcClient()
+        tokenInfo.value = await rpc.getTokenInfo(props.contract.token)
+
+        const contract = new UserInheritanceContract(props.contract.contractAddress)
+        const [, , _unlockTime] = await contract.getAllowance(props.contract.token)
+        unlockTime.value = Number(_unlockTime)
+      } catch (error) {
+        console.error('Failed to fetch contract info:', error)
+      }
+    })
+
+    const isUnlockTimeReached = computed(() => {
+      return Date.now() >= unlockTime.value * 1000
+    })
+
+    const handleClaim = async () => {
+      try {
+        loading.value = true
+        const contract = new UserInheritanceContract(props.contract.contractAddress)
+        await contract.claim(props.contract.token)
+        message.success('Successfully claimed')
+      } catch (error) {
+        console.error('Failed to claim:', error)
+        message.error('Failed to claim')
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const handleUnapprove = async () => {
+      try {
+        unapprovingLoading.value = true
+        const contract = new UserInheritanceContract(props.contract.contractAddress)
+        await contract.unapprove(props.contract.token)
+        message.success('Successfully unapproved')
+      } catch (error) {
+        console.error('Failed to unapprove:', error)
+        message.error('Failed to unapprove')
+      } finally {
+        unapprovingLoading.value = false
+      }
+    }
+
+    const formatTime = (timestamp: number) => {
+      return new Date(timestamp * 1000).toLocaleString()
+    }
+
+    const displayedHeirs = computed(() => {
+      if (showAllHeirs.value || props.contract.heirs.length <= 3) {
+        return props.contract.heirs
+      }
+      return props.contract.heirs.slice(0, 3)
+    })
+
+    const renderHeirInfo = (heir: string, index: number) => (
+      <div key={heir} class="bg-gray-700 rounded px-3 py-1 text-sm flex items-center gap-2">
+        <span class="text-gray-300">{formatAddress(heir, 6)}</span>
+        <span class="text-white">
+          {formatUnits(props.contract.amounts[index], tokenInfo.value?.decimals || 18)} {tokenInfo.value?.symbol || '???'}
+        </span>
+        <span class="text-gray-400">({Number(props.contract.percentages[index]) / 100}%)</span>
+      </div>
+    )
+
+    return () => (
+      <div class="bg-gray-800 rounded-lg p-4 space-y-4">
+        {/* 头部：代币信息和操作按钮 */}
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <span class="text-xl text-white font-medium">
+              {tokenInfo.value?.symbol || formatAddress(props.contract.token)}
+            </span>
+            <span class="text-green-400 text-sm">Verified</span>
+          </div>
+          <div class="flex items-center gap-2">
+            {!props.isInherited && (
+              <NButton
+                size="tiny"
+                type="error"
+                ghost
+                loading={unapprovingLoading.value}
+                onClick={handleUnapprove}
+              >
+                UnApprove
+              </NButton>
+            )}
+            {props.isInherited && (
+              <NButton
+                size="small"
+                type="primary"
+                loading={loading.value}
+                disabled={!isUnlockTimeReached.value}
+                onClick={handleClaim}
+              >
+                {isUnlockTimeReached.value ? 'Claim' : 'Locked'}
+              </NButton>
             )}
           </div>
-        </CyberCard>
-      )
-    }
+        </div>
+
+        {/* 合约信息 */}
+        <div class="grid grid-cols-1 gap-x-8 gap-y-2 text-sm">
+          <div>
+            <span class="text-gray-400">Contract:</span>
+            <span class="text-white ml-2">{formatAddress(props.contract.contractAddress)}</span>
+          </div>
+          <div>
+            <span class="text-gray-400">Token:</span>
+            <span class="text-white ml-2">{formatAddress(props.contract.token)}</span>
+          </div>
+          <div>
+            <span class="text-gray-400">Owner:</span>
+            <span class="text-white ml-2">{formatAddress(props.contract.owner)}</span>
+          </div>
+          <div>
+            <span class="text-gray-400">Unlock:</span>
+            <span class="text-white ml-2">{formatTime(unlockTime.value)}</span>
+          </div>
+        </div>
+
+        {/* 继承人信息 - 只在非继承视图中显示 */}
+        {!props.isInherited && (
+          <div class="space-y-2">
+            <div class="flex flex-wrap gap-2">
+              {displayedHeirs.value.map((heir, index) => renderHeirInfo(heir, index))}
+            </div>
+            {props.contract.heirs.length > 3 && (
+              <NPopover trigger="click">
+                {{
+                  trigger: () => (
+                    <NButton 
+                      text 
+                      type="primary" 
+                      size="tiny"
+                      class="mt-1"
+                      onClick={() => showAllHeirs.value = !showAllHeirs.value}
+                    >
+                      {showAllHeirs.value ? 'Show Less' : `+${props.contract.heirs.length - 3} more`}
+                    </NButton>
+                  ),
+                  default: () => (
+                    <div class="max-w-md space-y-2">
+                      {props.contract.heirs.slice(3).map((heir, index) => 
+                        renderHeirInfo(heir, index + 3)
+                      )}
+                    </div>
+                  )
+                }}
+              </NPopover>
+            )}
+          </div>
+        )}
+      </div>
+    )
   }
 }) 

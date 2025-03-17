@@ -56,6 +56,7 @@ export default defineComponent({
         
         // 获取我作为继承人的合约
         const heirContractsData = await contract.getContractsByHeir()
+        console.log('heirContractsData', heirContractsData)
         heirContracts.value = heirContractsData.map((contract: any[]) => ({
           contractAddress: contract[0],
           token: contract[1],

@@ -4,7 +4,7 @@ import CyberCard from '@/components/common/CyberCard'
 import type { ContractInfo } from '@/utils/contracts'
 import type { TokenInfo } from '@/utils/ethers'
 import ContractCard from './ContractCard'
-
+import { useRouter } from 'vue-router'
 export default defineComponent({
   name: 'MyLegacyPlans',
   props: {
@@ -18,6 +18,7 @@ export default defineComponent({
     }
   },
   setup(props) {
+    const router = useRouter()
     return () => (
       <CyberCard>
         <div class="relative">
@@ -26,17 +27,22 @@ export default defineComponent({
               default: () => (
                 <div class="p-6">
                   <h2 class="text-2xl text-white mb-6 font-bold">My Legacy Plans</h2>
-                  <div class="space-y-4">
+                  <div class="grid grid-cols-3 gap-4">
                     {props.contracts?.length > 0 ? (
-                      props.contracts.map((contract, index) => (
-                        <ContractCard key={index} contract={contract} />
+                      props.contracts.map(contract => (
+                        <ContractCard 
+                          key={contract.contractAddress} 
+                          contract={contract} 
+                        />
                       ))
                     ) : (
-                      <NEmpty description="No legacy plans created yet">
-                        <NButton class="cyber-button mt-4">
-                          Create New Plan
-                        </NButton>
-                      </NEmpty>
+                      <div class="col-span-3">
+                        <NEmpty description="No legacy plans created yet">
+                          <NButton class="cyber-button mt-4" onClick={() => router.push('/assets')}>
+                            Create New Plan
+                          </NButton>
+                        </NEmpty>
+                      </div>
                     )}
                   </div>
                 </div>
