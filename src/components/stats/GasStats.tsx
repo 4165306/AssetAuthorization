@@ -32,6 +32,9 @@ export default defineComponent({
             gasFee: number
           }
         }
+        activeDays: Set<string>
+        activeWeeks: Set<string>
+        activeMonths: Set<string>
       }
     }>({
       '1d': { 
@@ -48,7 +51,10 @@ export default defineComponent({
           '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
-        }
+        },
+        activeDays: new Set<string>(),
+        activeWeeks: new Set<string>(),
+        activeMonths: new Set<string>()
       },
       '7d': { 
         totalGasFee: 0, 
@@ -64,7 +70,10 @@ export default defineComponent({
           '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
-        }
+        },
+        activeDays: new Set<string>(),
+        activeWeeks: new Set<string>(),
+        activeMonths: new Set<string>()
       },
       '15d': { 
         totalGasFee: 0, 
@@ -80,7 +89,10 @@ export default defineComponent({
           '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
-        }
+        },
+        activeDays: new Set<string>(),
+        activeWeeks: new Set<string>(),
+        activeMonths: new Set<string>()
       },
       '30d': { 
         totalGasFee: 0, 
@@ -96,7 +108,10 @@ export default defineComponent({
           '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
-        }
+        },
+        activeDays: new Set<string>(),
+        activeWeeks: new Set<string>(),
+        activeMonths: new Set<string>()
       },
       '180d': { 
         totalGasFee: 0, 
@@ -112,7 +127,10 @@ export default defineComponent({
           '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
-        }
+        },
+        activeDays: new Set<string>(),
+        activeWeeks: new Set<string>(),
+        activeMonths: new Set<string>()
       },
       '365d': { 
         totalGasFee: 0, 
@@ -128,7 +146,10 @@ export default defineComponent({
           '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
-        }
+        },
+        activeDays: new Set<string>(),
+        activeWeeks: new Set<string>(),
+        activeMonths: new Set<string>()
       },
       'all': { 
         totalGasFee: 0, 
@@ -144,7 +165,10 @@ export default defineComponent({
           '15-18': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '18-21': { transactions: 0, gasUsed: 0, gasFee: 0 },
           '21-24': { transactions: 0, gasUsed: 0, gasFee: 0 }
-        }
+        },
+        activeDays: new Set<string>(),
+        activeWeeks: new Set<string>(),
+        activeMonths: new Set<string>()
       }
     })
 
@@ -179,15 +203,28 @@ export default defineComponent({
       if (cache) {
         const { timeout, stats: cachedStats } = JSON.parse(cache)
         if (timeout > new Date().getTime()) {
+          // 恢复缓存的活跃统计数据
+          Object.keys(cachedStats).forEach(period => {
+            statsData[period].activeDays = new Set(cachedStats[period].activeDays)
+            statsData[period].activeWeeks = new Set(cachedStats[period].activeWeeks)
+            statsData[period].activeMonths = new Set(cachedStats[period].activeMonths)
+          })
           Object.assign(statsData, cachedStats)
           loading.value = false
           return 
         } else {
-          localStorage.removeItem('__gasStats__')
+          localStorage.removeItem(`__gasStats_${wallet.address}__`)
         }
       }
 
       try {
+        // 重置所有统计数据
+        Object.keys(statsData).forEach(period => {
+          statsData[period].activeDays.clear()
+          statsData[period].activeWeeks.clear()
+          statsData[period].activeMonths.clear()
+        })
+
         const now = new Date().getTime()
         const txIterator = getRpcClient('Monad Testnet').getHistoryTransactions(0)
         let processedTxs = 0
@@ -197,16 +234,30 @@ export default defineComponent({
           
           for (const tx of transactions) {
             const txTime = tx.timestamp
+            const txDate = new Date(txTime)
             const timeDiff = now - txTime
             const txHour = new Date(txTime).getHours()
             const timeSlot = getTimeSlot(txHour)
+            
+            // 更新活跃统计
+            const dayKey = txDate.toISOString().split('T')[0]
+            const weekKey = `${txDate.getFullYear()}-${getWeekNumber(txDate)}`
+            const monthKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`
 
-            // Update stats for each time period
+            // 根据时间范围更新对应时期的活跃统计
             Object.entries(timeRanges).forEach(([period, range]) => {
               if (timeDiff <= range) {
+                statsData[period].activeDays.add(dayKey)
+                statsData[period].activeWeeks.add(weekKey)
+                statsData[period].activeMonths.add(monthKey)
                 updatePeriodStats(period, tx, timeSlot)
               }
             })
+            
+            // 更新全时段统计
+            statsData['all'].activeDays.add(dayKey)
+            statsData['all'].activeWeeks.add(weekKey)
+            statsData['all'].activeMonths.add(monthKey)
             updatePeriodStats('all', tx, timeSlot)
 
             batchCounter++
@@ -240,10 +291,20 @@ export default defineComponent({
 
         loading.value = false
         
-        // Cache data
+        // 缓存时序列化 Set
         setTimeout(() => { 
+          const serializedStats = Object.keys(statsData).reduce((acc, period) => {
+            acc[period] = {
+              ...statsData[period],
+              activeDays: Array.from(statsData[period].activeDays),
+              activeWeeks: Array.from(statsData[period].activeWeeks),
+              activeMonths: Array.from(statsData[period].activeMonths)
+            }
+            return acc
+          }, {} as any)
+
           localStorage.setItem(`__gasStats_${wallet.address}__`, JSON.stringify({
-            stats: statsData,
+            stats: serializedStats,
             timeout: new Date().getTime() + cacheTimeout.value * 1000
           }))
         }, 0)
@@ -298,6 +359,15 @@ export default defineComponent({
       }
     })
 
+    // 添加获取周数的辅助函数
+    const getWeekNumber = (date: Date) => {
+      const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+      const dayNum = d.getUTCDay() || 7
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+      return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+    }
+
     return () => (
       <CyberCard>
         {loading.value ? (
@@ -311,7 +381,7 @@ export default defineComponent({
           </div>
         ) : (
           <div>
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center mb-6">
               <div class="flex items-center">
                 <h3 class="text-xl text-white">Gas Overview</h3>
                 <div class="mx-2 text-gray-500">
@@ -360,7 +430,9 @@ export default defineComponent({
                 </div>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            
+            {/* 第一行卡片 */}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
                 <div class="text-sm text-gray-300">Gas Used</div>
                 <div class="text-lg text-white">
@@ -380,6 +452,29 @@ export default defineComponent({
                 </div>
               </div>
             </div>
+
+            {/* 第二行卡片 */}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
+                <div class="text-sm text-gray-300">Active Days</div>
+                <div class="text-lg text-white">
+                  {currentStats.value.activeDays.size}
+                </div>
+              </div>
+              <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
+                <div class="text-sm text-gray-300">Active Weeks</div>
+                <div class="text-lg text-white">
+                  {currentStats.value.activeWeeks.size}
+                </div>
+              </div>
+              <div class="bg-opacity-20 bg-purple-900 p-4 rounded-lg">
+                <div class="text-sm text-gray-300">Active Months</div>
+                <div class="text-lg text-white">
+                  {currentStats.value.activeMonths.size}
+                </div>
+              </div>
+            </div>
+
             {!loading.value && (
               <div class="mt-8">
                 <h4 class="text-lg text-white mb-4">24-Hour Distribution</h4>
