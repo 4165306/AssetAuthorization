@@ -203,13 +203,17 @@ export default defineComponent({
       if (cache) {
         const { timeout, stats: cachedStats } = JSON.parse(cache)
         if (timeout > new Date().getTime()) {
-          // 恢复缓存的活跃统计数据
+          // 正确恢复缓存的活跃统计数据
           Object.keys(cachedStats).forEach(period => {
-            statsData[period].activeDays = new Set(cachedStats[period].activeDays)
-            statsData[period].activeWeeks = new Set(cachedStats[period].activeWeeks)
-            statsData[period].activeMonths = new Set(cachedStats[period].activeMonths)
+            // 确保先创建新的 Set 对象
+            statsData[period] = {
+              ...cachedStats[period],
+              // 将数组转换回 Set
+              activeDays: new Set(cachedStats[period].activeDays || []),
+              activeWeeks: new Set(cachedStats[period].activeWeeks || []),
+              activeMonths: new Set(cachedStats[period].activeMonths || [])
+            }
           })
-          Object.assign(statsData, cachedStats)
           loading.value = false
           return 
         } else {
@@ -296,6 +300,7 @@ export default defineComponent({
           const serializedStats = Object.keys(statsData).reduce((acc, period) => {
             acc[period] = {
               ...statsData[period],
+              // 将 Set 转换为数组以便序列化
               activeDays: Array.from(statsData[period].activeDays),
               activeWeeks: Array.from(statsData[period].activeWeeks),
               activeMonths: Array.from(statsData[period].activeMonths)

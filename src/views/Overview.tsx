@@ -11,7 +11,7 @@ export default defineComponent({
       <div class="cyber-bg min-h-screen">
         <TopNav />
         <div class="max-w-6xl mx-auto p-8">
-          <NGrid cols="1 xl:2" responsive="screen" xGap={24} yGap={24}>
+          <NGrid cols="1" xGap={24} yGap={24}>
             <NGridItem>
               <GasStats />
             </NGridItem>
