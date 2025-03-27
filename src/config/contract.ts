@@ -1,5 +1,5 @@
 export const contractConfig = {
   10143: {
-    address: '0x827Eb4F9E568926c72E22B4358AbD6e0c4E622e1'
+    address: '0xA0f1183e70fda23333a935Db54589116B93370a5'
   }
 }

@@ -278,7 +278,7 @@ class MonadRpc extends AbstructEthers implements RpcClient {
    */
   private getAppidAndSecret(request_full_url: string) {
     const n = new Date().getTime().toString().slice(0, -3)
-    const input = '8567-'.concat(n.toString())
+    const input = '36657-'.concat(n.toString())
     const key = 'monad-secret'
     const i = HmacSHA256(input, key).toString()
     let appId = ''
